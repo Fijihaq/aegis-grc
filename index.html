@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>AEGIS GRC — Enterprise Risk & Control Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&family=Figtree:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root {
+  --bg:#f4f1eb;--surface:#ffffff;--surface2:#f9f7f3;--surface3:#f0ede6;
+  --border:#e2ddd5;--border2:#d5cfc6;
+  --ink:#1a1714;--ink2:#3d3830;--ink3:#7a7265;
+  --accent:#c8401a;--accent2:#2d6a4f;--accent3:#1e3a5f;
+  --amber:#d4860a;--teal:#0d7377;
+  --critical:#c8401a;--high:#d4860a;--medium:#2d6a4f;--low:#1e3a5f;
+  --font-serif:'Instrument Serif',serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --font-body:'Figtree',sans-serif;
+  --shadow:0 1px 3px rgba(26,23,20,0.08),0 4px 16px rgba(26,23,20,0.06);
+  --shadow-lg:0 8px 32px rgba(26,23,20,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);min-height:100vh;font-size:14px;line-height:1.6}
+
+/* NOISE TEXTURE */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.4}
+
+/* LAYOUT */
+.app{display:flex;min-height:100vh;position:relative;z-index:1}
+.sidebar{width:240px;background:var(--ink);color:#f4f1eb;flex-shrink:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.main-content{flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar-logo{padding:28px 24px 20px;border-bottom:1px solid rgba(244,241,235,0.1)}
+.logo-mark{font-family:var(--font-serif);font-size:26px;font-style:italic;color:#f4f1eb;letter-spacing:-0.5px}
+.logo-mark span{color:var(--accent);font-style:normal}
+.logo-sub{font-family:var(--font-mono);font-size:9px;color:rgba(244,241,235,0.4);letter-spacing:3px;text-transform:uppercase;margin-top:4px}
+.sidebar-section{padding:20px 16px 8px;font-family:var(--font-mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(244,241,235,0.3)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-radius:6px;margin:2px 8px;transition:all 0.15s;color:rgba(244,241,235,0.6);font-size:13px;font-weight:500}
+.nav-item:hover{background:rgba(244,241,235,0.08);color:#f4f1eb}
+.nav-item.active{background:rgba(200,64,26,0.2);color:#f4f1eb;border-left:2px solid var(--accent)}
+.nav-icon{width:16px;text-align:center;font-size:14px}
+.nav-badge{margin-left:auto;background:var(--accent);color:#fff;font-family:var(--font-mono);font-size:9px;padding:2px 6px;border-radius:10px}
+.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid rgba(244,241,235,0.1)}
+.user-chip{display:flex;align-items:center;gap:10px}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--amber));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.user-name{font-size:12px;font-weight:600;color:#f4f1eb}
+.user-role{font-family:var(--font-mono);font-size:9px;color:rgba(244,241,235,0.4);letter-spacing:1px}
+
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.page-title{font-family:var(--font-serif);font-size:22px;font-style:italic;color:var(--ink)}
+.topbar-actions{display:flex;gap:10px;align-items:center}
+.btn{padding:8px 16px;border-radius:6px;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#b03516}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--ink2)}
+.btn-outline:hover{background:var(--surface3);border-color:var(--border2)}
+.btn-ghost{background:transparent;color:var(--ink3)}
+.btn-ghost:hover{background:var(--surface3)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-success{background:var(--accent2);color:#fff}
+.btn-success:hover{background:#235c43}
+.btn:disabled{opacity:0.45;cursor:not-allowed}
+
+/* PAGES */
+.page{display:none;padding:32px;animation:fadeIn 0.2s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow)}
+.card-sm{padding:16px 20px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.card-title{font-family:var(--font-serif);font-size:18px;font-style:italic}
+.card-label{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.col-span-2{grid-column:span 2}
+
+/* STAT CARDS */
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.stat-critical::after{background:var(--critical)}
+.stat-high::after{background:var(--high)}
+.stat-medium::after{background:var(--medium)}
+.stat-low::after{background:var(--low)}
+.stat-num{font-family:var(--font-serif);font-size:42px;line-height:1;margin:8px 0 4px}
+.stat-critical .stat-num{color:var(--critical)}
+.stat-high .stat-num{color:var(--high)}
+.stat-medium .stat-num{color:var(--medium)}
+.stat-low .stat-num{color:var(--low)}
+.stat-label{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3)}
+.stat-trend{font-size:11px;color:var(--ink3);margin-top:4px}
+
+/* FORMS */
+.field{margin-bottom:16px}
+.field-label{font-family:var(--font-mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;display:block}
+input[type=text],input[type=password],input[type=email],textarea,select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--ink);font-family:var(--font-body);font-size:14px;padding:10px 14px;outline:none;transition:border-color 0.15s,box-shadow 0.15s;-webkit-appearance:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,64,26,0.1)}
+textarea{resize:vertical;min-height:90px;line-height:1.6}
+select option{background:var(--surface)}
+
+/* RISK BADGES */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-family:var(--font-mono);font-size:10px;font-weight:500;letter-spacing:0.5px;text-transform:uppercase;white-space:nowrap}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+.b-critical{color:var(--critical);background:rgba(200,64,26,0.1);border:1px solid rgba(200,64,26,0.2)}
+.b-high{color:var(--high);background:rgba(212,134,10,0.1);border:1px solid rgba(212,134,10,0.2)}
+.b-medium{color:var(--medium);background:rgba(45,106,79,0.1);border:1px solid rgba(45,106,79,0.2)}
+.b-low{color:var(--low);background:rgba(30,58,95,0.1);border:1px solid rgba(30,58,95,0.2)}
+.b-open{color:#7a7265;background:rgba(122,114,101,0.1);border:1px solid rgba(122,114,101,0.2)}
+.b-progress{color:var(--amber);background:rgba(212,134,10,0.1);border:1px solid rgba(212,134,10,0.2)}
+.b-done{color:var(--accent2);background:rgba(45,106,79,0.1);border:1px solid rgba(45,106,79,0.2)}
+.b-overdue{color:var(--critical);background:rgba(200,64,26,0.08);border:1px solid rgba(200,64,26,0.2)}
+
+/* FW TAGS */
+.fw{display:inline-block;padding:2px 7px;border-radius:4px;font-family:var(--font-mono);font-size:9px;letter-spacing:0.5px;margin:2px 2px 2px 0;border:1px solid}
+.fw-cobit{background:rgba(30,58,95,0.08);color:var(--accent3);border-color:rgba(30,58,95,0.2)}
+.fw-nistcsf{background:rgba(13,115,119,0.08);color:var(--teal);border-color:rgba(13,115,119,0.2)}
+.fw-nistrmf{background:rgba(45,106,79,0.08);color:var(--accent2);border-color:rgba(45,106,79,0.2)}
+.fw-iso{background:rgba(212,134,10,0.08);color:var(--amber);border-color:rgba(212,134,10,0.2)}
+
+/* TABLE */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead tr{background:var(--surface3)}
+th{font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);padding:12px 14px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(26,23,20,0.015)}
+.td-mono{font-family:var(--font-mono);font-size:11px;color:var(--ink3)}
+
+/* KANBAN */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:start}
+.kanban-col{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.kanban-head{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.kanban-count{background:var(--border);color:var(--ink3);border-radius:10px;padding:1px 7px;font-size:10px}
+.kanban-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;box-shadow:var(--shadow);cursor:pointer;transition:all 0.15s}
+.kanban-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+.kanban-card-title{font-size:12px;font-weight:600;margin-bottom:6px;line-height:1.4}
+.kanban-card-meta{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.kanban-owner{font-family:var(--font-mono);font-size:9px;color:var(--ink3)}
+.kanban-due{font-family:var(--font-mono);font-size:9px;color:var(--ink3)}
+.kanban-due.overdue{color:var(--critical)}
+
+/* PROGRESS BAR */
+.progress-wrap{background:var(--surface3);border-radius:99px;height:6px;overflow:hidden;margin:8px 0}
+.progress-bar{height:100%;border-radius:99px;transition:width 0.4s ease}
+.progress-critical{background:var(--critical)}
+.progress-high{background:var(--high)}
+.progress-medium{background:var(--medium)}
+.progress-low{background:var(--low)}
+.progress-accent{background:var(--accent)}
+
+/* HEATMAP */
+.heatmap{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.heatmap-cell{aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;font-weight:600;cursor:default;transition:transform 0.15s}
+.heatmap-cell:hover{transform:scale(1.08)}
+.hm-0{background:rgba(45,106,79,0.15);color:var(--accent2)}
+.hm-1{background:rgba(45,106,79,0.25);color:var(--accent2)}
+.hm-2{background:rgba(212,134,10,0.2);color:var(--amber)}
+.hm-3{background:rgba(212,134,10,0.35);color:var(--amber)}
+.hm-4{background:rgba(200,64,26,0.35);color:var(--critical)}
+
+/* EVIDENCE */
+.evidence-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.evidence-icon{width:36px;height:36px;border-radius:8px;background:var(--surface3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.evidence-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.evidence-meta{font-family:var(--font-mono);font-size:10px;color:var(--ink3)}
+.evidence-status{margin-left:auto;flex-shrink:0}
+.upload-zone{border:2px dashed var(--border2);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all 0.15s;margin-bottom:16px}
+.upload-zone:hover{border-color:var(--accent);background:rgba(200,64,26,0.03)}
+.upload-zone-icon{font-size:28px;margin-bottom:8px}
+.upload-zone-text{font-size:13px;color:var(--ink3)}
+
+/* TIMELINE */
+.timeline{position:relative;padding-left:24px}
+.timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:1px;background:var(--border)}
+.tl-item{position:relative;margin-bottom:20px}
+.tl-dot{position:absolute;left:-20px;top:4px;width:10px;height:10px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 2px var(--border)}
+.tl-dot-critical{background:var(--critical);box-shadow:0 0 0 2px rgba(200,64,26,0.2)}
+.tl-dot-done{background:var(--accent2);box-shadow:0 0 0 2px rgba(45,106,79,0.2)}
+.tl-dot-open{background:var(--ink3);box-shadow:0 0 0 2px rgba(122,114,101,0.2)}
+.tl-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.tl-meta{font-family:var(--font-mono);font-size:10px;color:var(--ink3)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(26,23,20,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px);padding:20px}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:520px;width:100%;box-shadow:var(--shadow-lg);position:relative;max-height:90vh;overflow-y:auto}
+.modal h2{font-family:var(--font-serif);font-size:24px;font-style:italic;margin-bottom:8px}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink3)}
+
+/* COMMENTS */
+.comment{display:flex;gap:10px;margin-bottom:14px}
+.comment-avatar{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+.comment-body{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.comment-author{font-weight:600;font-size:12px;margin-bottom:4px}
+.comment-text{font-size:13px;color:var(--ink2);line-height:1.5}
+.comment-time{font-family:var(--font-mono);font-size:9px;color:var(--ink3);margin-top:4px}
+
+/* SPINNER */
+.spinner{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent);animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* NOTIFICATION */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#f4f1eb;padding:12px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;box-shadow:var(--shadow-lg);animation:slideUp 0.3s ease;display:none}
+.toast.visible{display:block}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* RISK DETAIL PANEL */
+.detail-panel{background:var(--surface);border-left:1px solid var(--border);width:420px;position:fixed;top:0;right:-440px;height:100vh;overflow-y:auto;z-index:500;transition:right 0.3s ease;box-shadow:-8px 0 32px rgba(26,23,20,0.1)}
+.detail-panel.open{right:0}
+.panel-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:10}
+.panel-body{padding:24px}
+.panel-section{margin-bottom:24px}
+.panel-section-title{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+
+/* SCORE RING */
+.score-ring{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;font-family:var(--font-serif);font-size:22px;font-weight:700;border:3px solid}
+.ring-critical{color:var(--critical);border-color:var(--critical);background:rgba(200,64,26,0.08)}
+.ring-high{color:var(--high);border-color:var(--high);background:rgba(212,134,10,0.08)}
+.ring-medium{color:var(--medium);border-color:var(--medium);background:rgba(45,106,79,0.08)}
+.ring-low{color:var(--low);border-color:var(--low);background:rgba(30,58,95,0.08)}
+
+/* CONTROL CHECK */
+.control-check{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.control-check:last-child{border-bottom:none}
+.check-box{width:18px;height:18px;border-radius:4px;border:2px solid var(--border2);flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.check-box.checked{background:var(--accent2);border-color:var(--accent2);color:#fff;font-size:10px}
+.check-label{font-size:13px;line-height:1.5}
+.check-status{margin-left:auto;flex-shrink:0}
+
+/* COMPLIANCE SCORE */
+.compliance-meter{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center}
+.compliance-num{font-family:var(--font-serif);font-size:56px;line-height:1;margin:8px 0}
+.compliance-label{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3)}
+
+/* TABS */
+.tabs{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px;margin-bottom:24px}
+.tab{flex:1;padding:7px 12px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all 0.15s;border:none;background:none;color:var(--ink3)}
+.tab.active{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+
+/* SECTION DIVIDER */
+.section-head{margin-bottom:24px}
+.section-eyebrow{font-family:var(--font-mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.section-title{font-family:var(--font-serif);font-size:28px;font-style:italic;margin-bottom:6px}
+.section-desc{color:var(--ink3);font-size:14px;line-height:1.6}
+
+/* CHART BARS */
+.bar-chart{display:flex;flex-direction:column;gap:10px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-label{font-family:var(--font-mono);font-size:10px;color:var(--ink3);width:80px;flex-shrink:0;text-align:right}
+.bar-track{flex:1;background:var(--surface3);border-radius:4px;height:20px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-family:var(--font-mono);font-size:10px;color:#fff;font-weight:600;transition:width 0.6s ease}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .sidebar{display:none}
+  .kanban{grid-template-columns:1fr 1fr}
+  .grid-4{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- API KEY MODAL -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal">
+    <h2>Welcome to Aegis GRC</h2>
+    <p style="color:var(--ink3);font-size:14px;margin-bottom:24px;line-height:1.6">Enterprise Risk & Control Platform powered by Claude AI. Enter your Anthropic API key to begin, or use Demo Mode to explore with sample data.</p>
+    <div class="field">
+      <label class="field-label">Anthropic API Key</label>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..."/>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveKey()">Activate Platform →</button>
+      <button class="btn btn-outline" onclick="demoMode()">Demo Mode</button>
+    </div>
+    <p style="font-family:var(--font-mono);font-size:10px;color:var(--ink3);margin-top:14px;text-align:center">Key stored in session memory only — never transmitted or saved</p>
+  </div>
+</div>
+
+<!-- RISK DETAIL PANEL -->
+<div class="detail-panel" id="detailPanel">
+  <div class="panel-header">
+    <div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink3);letter-spacing:2px;text-transform:uppercase">Risk Detail</div>
+      <div id="panelRiskId" style="font-family:var(--font-serif);font-size:18px;font-style:italic"></div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="closePanel()">✕ Close</button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</div>
+
+<!-- APP -->
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">Ægi<span>s</span></div>
+      <div class="logo-sub">GRC Platform</div>
+    </div>
+    <div class="sidebar-section">Core</div>
+    <div class="nav-item active" onclick="navigate('dashboard',this)"><span class="nav-icon">◈</span> Dashboard</div>
+    <div class="nav-item" onclick="navigate('generate',this)"><span class="nav-icon">⚡</span> Generate RCM</div>
+    <div class="nav-item" onclick="navigate('matrix',this)"><span class="nav-icon">⊞</span> Risk Matrix <span class="nav-badge" id="matrixBadge">0</span></div>
+    <div class="sidebar-section">Workflow</div>
+    <div class="nav-item" onclick="navigate('kanban',this)"><span class="nav-icon">◫</span> Remediation <span class="nav-badge" id="kanbanBadge">0</span></div>
+    <div class="nav-item" onclick="navigate('evidence',this)"><span class="nav-icon">◉</span> Evidence Vault</div>
+    <div class="nav-item" onclick="navigate('controls',this)"><span class="nav-icon">✓</span> Control Testing</div>
+    <div class="sidebar-section">Governance</div>
+    <div class="nav-item" onclick="navigate('collaborate',this)"><span class="nav-icon">◎</span> Collaboration</div>
+    <div class="nav-item" onclick="navigate('reports',this)"><span class="nav-icon">⊟</span> Reports</div>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar">GR</div>
+        <div><div class="user-name">GRC Admin</div><div class="user-role">RISK OWNER</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div class="topbar-actions">
+        <div id="topbarInfo" style="font-family:var(--font-mono);font-size:10px;color:var(--ink3);letter-spacing:1px"></div>
+        <button class="btn btn-outline btn-sm" onclick="exportXLSX()">⬇ Excel</button>
+        <button class="btn btn-outline btn-sm" onclick="exportPDF()">⬇ PDF</button>
+        <button class="btn btn-outline btn-sm" onclick="exportJSON()">⬇ JSON</button>
+      </div>
+    </div>
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div class="page active" id="page-dashboard">
+      <div style="padding:0 0 24px">
+        <div class="section-eyebrow">// Overview</div>
+        <div class="section-title">Risk Posture Dashboard</div>
+        <div class="section-desc">Real-time visibility into your organization's risk landscape and control effectiveness.</div>
+      </div>
+
+      <div class="grid-4" style="margin-bottom:24px" id="dashStats">
+        <div class="stat-card stat-critical"><div class="stat-label">Critical</div><div class="stat-num" id="ds-critical">0</div><div class="stat-trend">Requires immediate action</div></div>
+        <div class="stat-card stat-high"><div class="stat-label">High</div><div class="stat-num" id="ds-high">0</div><div class="stat-trend">Priority remediation</div></div>
+        <div class="stat-card stat-medium"><div class="stat-label">Medium</div><div class="stat-num" id="ds-medium">0</div><div class="stat-trend">Scheduled remediation</div></div>
+        <div class="stat-card stat-low"><div class="stat-label">Low</div><div class="stat-num" id="ds-low">0</div><div class="stat-trend">Monitor & review</div></div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:24px">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Risk Heatmap</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--ink3)">Likelihood × Impact</div></div>
+          <div style="display:grid;grid-template-columns:20px 1fr;gap:8px;align-items:center">
+            <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--font-mono);font-size:9px;color:var(--ink3);letter-spacing:2px;text-align:center">IMPACT →</div>
+            <div>
+              <div class="heatmap" id="heatmap"></div>
+              <div style="display:flex;justify-content:center;font-family:var(--font-mono);font-size:9px;color:var(--ink3);letter-spacing:2px;margin-top:8px">LIKELIHOOD →</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Control Coverage</div></div>
+          <div class="bar-chart" id="coverageChart">
+            <div style="text-align:center;color:var(--ink3);font-size:13px;padding:20px">Generate a risk matrix to see coverage</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Remediation Progress</div><button class="btn btn-outline btn-sm" onclick="navigate('kanban',document.querySelector('[onclick*=kanban]'))">View Board</button></div>
+          <div id="remProgress"><div style="color:var(--ink3);font-size:13px">No active remediations</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Recent Activity</div></div>
+          <div class="timeline" id="activityFeed">
+            <div class="tl-item"><div class="tl-dot tl-dot-open"></div><div class="tl-title" style="color:var(--ink3);font-size:13px">No activity yet — generate your first risk matrix</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ GENERATE ═══ -->
+    <div class="page" id="page-generate">
+      <div style="max-width:780px">
+        <div class="section-eyebrow">// Step 01</div>
+        <div class="section-title">Generate Risk & Control Matrix</div>
+        <div class="section-desc">Describe your business process or asset. The AI will perform a comprehensive risk assessment mapped to all four frameworks simultaneously.</div>
+
+        <div class="card" style="margin-top:24px">
+          <div class="grid-2">
+            <div class="field"><label class="field-label">Organization Name</label><input type="text" id="g-org" placeholder="e.g. Acme Corp"/></div>
+            <div class="field"><label class="field-label">Industry Sector</label>
+              <select id="g-industry">
+                <option value="">Select...</option>
+                <option>Financial Services</option><option>Healthcare</option>
+                <option>Retail & E-commerce</option><option>Manufacturing</option>
+                <option>Government & Public Sector</option><option>Technology & SaaS</option>
+                <option>Energy & Utilities</option><option>Telecommunications</option>
+                <option>Education</option><option>Other</option>
+              </select>
+            </div>
+            <div class="field col-span-2"><label class="field-label">Business Process / Asset / Scenario</label><textarea id="g-process" placeholder="Describe the system, process, or asset you want to assess. Be specific — mention data types, integrations, users, and regulatory context..."></textarea></div>
+            <div class="field"><label class="field-label">Risk Appetite</label>
+              <select id="g-appetite"><option value="low">Low — Conservative</option><option value="medium" selected>Medium — Balanced</option><option value="high">High — Aggressive</option></select>
+            </div>
+            <div class="field"><label class="field-label">Jurisdiction / Regulation</label>
+              <select id="g-reg">
+                <option value="general">General / Global</option>
+                <option value="india">India (RBI, SEBI, DPDP)</option>
+                <option value="eu">EU (GDPR, NIS2, DORA)</option>
+                <option value="us">US (HIPAA, SOX, CCPA)</option>
+                <option value="uk">UK (FCA, ICO, NCSC)</option>
+                <option value="gcc">GCC (SAMA, PDPL)</option>
+              </select>
+            </div>
+            <div class="field"><label class="field-label">Number of Risks</label>
+              <select id="g-count"><option value="5">5</option><option value="8" selected>8</option><option value="12">12</option><option value="15">15</option></select>
+            </div>
+            <div class="field"><label class="field-label">Assessment Owner</label><input type="text" id="g-owner" placeholder="e.g. John Smith, CISO"/></div>
+          </div>
+
+          <div style="margin:8px 0 20px">
+            <label class="field-label">Frameworks</label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px"><input type="checkbox" id="fw-cobit" checked style="width:auto;padding:0;border:none;background:none"> COBIT 2019</label>
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px"><input type="checkbox" id="fw-nistcsf" checked style="width:auto;padding:0;border:none;background:none"> NIST CSF</label>
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px"><input type="checkbox" id="fw-nistrmf" checked style="width:auto;padding:0;border:none;background:none"> NIST RMF</label>
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px"><input type="checkbox" id="fw-iso" checked style="width:auto;padding:0;border:none;background:none"> ISO 27001</label>
+            </div>
+          </div>
+
+          <div id="genStatus" style="display:none;align-items:center;gap:10px;padding:12px;background:var(--surface2);border-radius:8px;margin-bottom:16px">
+            <div class="spinner"></div>
+            <div id="genStatusText" style="font-family:var(--font-mono);font-size:12px;color:var(--accent)"></div>
+          </div>
+
+          <button class="btn btn-primary" id="genBtn" onclick="generateRCM()" style="width:100%;padding:13px;font-size:14px">
+            ⚡ Generate Risk & Control Matrix
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ MATRIX ═══ -->
+    <div class="page" id="page-matrix">
+      <div class="section-head">
+        <div class="section-eyebrow">// Risk Register</div>
+        <div class="section-title" id="matrixTitle">Risk & Control Matrix</div>
+      </div>
+      <div class="grid-4" style="margin-bottom:24px" id="matrixStats"></div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead><tr>
+              <th>Risk ID</th><th>Description</th><th>Category</th>
+              <th>COBIT</th><th>NIST CSF</th><th>NIST RMF</th><th>ISO 27001</th>
+              <th>L</th><th>I</th><th>Score</th><th>Rating</th>
+              <th>Controls</th><th>Owner</th><th>Status</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="matrixBody"><tr><td colspan="15" style="text-align:center;color:var(--ink3);padding:40px">No risks generated yet — go to Generate RCM to begin</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ KANBAN ═══ -->
+    <div class="page" id="page-kanban">
+      <div class="section-head">
+        <div class="section-eyebrow">// Remediation Workflow</div>
+        <div class="section-title">Remediation Board</div>
+        <div class="section-desc">Track every risk from identification through to verified closure.</div>
+      </div>
+      <div class="kanban" id="kanbanBoard">
+        <div class="kanban-col"><div class="kanban-head">Open <span class="kanban-count" id="kc-open">0</span></div><div id="k-open"></div></div>
+        <div class="kanban-col"><div class="kanban-head">In Progress <span class="kanban-count" id="kc-progress">0</span></div><div id="k-progress"></div></div>
+        <div class="kanban-col"><div class="kanban-head">In Review <span class="kanban-count" id="kc-review">0</span></div><div id="k-review"></div></div>
+        <div class="kanban-col"><div class="kanban-head">Closed <span class="kanban-count" id="kc-closed">0</span></div><div id="k-closed"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══ EVIDENCE ═══ -->
+    <div class="page" id="page-evidence">
+      <div class="section-head">
+        <div class="section-eyebrow">// Audit Evidence</div>
+        <div class="section-title">Evidence Vault</div>
+        <div class="section-desc">Upload and track evidence for each control. Auditors can review evidence directly from this vault.</div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" style="display:none" multiple onchange="handleFileUpload(event)"/>
+            <div class="upload-zone-icon">⊕</div>
+            <div class="upload-zone-text">Click to upload evidence files<br/><span style="font-family:var(--font-mono);font-size:10px;color:var(--ink3)">PDF, PNG, JPG, XLSX, CSV accepted</span></div>
+          </div>
+          <div id="evidenceList"><div style="color:var(--ink3);font-size:13px;text-align:center;padding:20px">No evidence uploaded yet</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="font-family:var(--font-serif);font-style:italic;font-size:18px;margin-bottom:16px">Evidence Checklist</div>
+          <div id="evidenceChecklist"><div style="color:var(--ink3);font-size:13px">Generate a risk matrix to see required evidence per control</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CONTROLS ═══ -->
+    <div class="page" id="page-controls">
+      <div class="section-head">
+        <div class="section-eyebrow">// Control Testing</div>
+        <div class="section-title">Control Effectiveness Testing</div>
+        <div class="section-desc">Mark controls as tested and track pass/fail status. Build your audit evidence record.</div>
+      </div>
+      <div class="grid-2" style="margin-bottom:24px">
+        <div class="compliance-meter">
+          <div class="compliance-label">Overall Control Coverage</div>
+          <div class="compliance-num" id="complianceScore" style="color:var(--accent2)">0%</div>
+          <div class="progress-wrap"><div class="progress-bar progress-medium" id="complianceBar" style="width:0%"></div></div>
+          <div class="compliance-label" id="complianceDetail">0 of 0 controls verified</div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="font-family:var(--font-serif);font-style:italic;font-size:18px;margin-bottom:12px">Testing Status by Framework</div>
+          <div id="fwCoverage"><div style="color:var(--ink3);font-size:13px">No controls to test yet</div></div>
+        </div>
+      </div>
+      <div id="controlTestList"><div class="card" style="text-align:center;color:var(--ink3)">Generate a risk matrix to begin control testing</div></div>
+    </div>
+
+    <!-- ═══ COLLABORATE ═══ -->
+    <div class="page" id="page-collaborate">
+      <div class="section-head">
+        <div class="section-eyebrow">// Team Governance</div>
+        <div class="section-title">Collaboration & Approval</div>
+        <div class="section-desc">Review, comment, and formally approve risk assessments with timestamped sign-offs.</div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-title" style="font-family:var(--font-serif);font-style:italic;font-size:18px;margin-bottom:16px">Assessment Sign-off</div>
+            <div id="signoffPanel">
+              <div style="color:var(--ink3);font-size:13px;margin-bottom:16px">No active assessment to approve. Generate a risk matrix first.</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="font-family:var(--font-serif);font-style:italic;font-size:18px;margin-bottom:16px">Add Comment</div>
+            <div class="field"><label class="field-label">Your Name</label><input type="text" id="c-name" placeholder="John Smith"/></div>
+            <div class="field"><label class="field-label">Role</label>
+              <select id="c-role"><option>Risk Analyst</option><option>CISO</option><option>Auditor</option><option>Compliance Officer</option><option>IT Manager</option></select>
+            </div>
+            <div class="field"><label class="field-label">Comment</label><textarea id="c-text" placeholder="Add your review comment, concern, or approval note..."></textarea></div>
+            <button class="btn btn-primary" onclick="addComment()" style="width:100%">Post Comment</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="font-family:var(--font-serif);font-style:italic;font-size:18px;margin-bottom:16px">Review Thread</div>
+          <div id="commentThread"><div style="color:var(--ink3);font-size:13px">No comments yet</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ REPORTS ═══ -->
+    <div class="page" id="page-reports">
+      <div class="section-head">
+        <div class="section-eyebrow">// Audit Output</div>
+        <div class="section-title">Reports & Audit Packs</div>
+        <div class="section-desc">Generate professional, auditor-ready reports with full framework mappings, evidence references, and sign-off records.</div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title" style="font-family:var(--font-serif);font-style:italic;font-size:18px;margin-bottom:16px">Export Options</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <button class="btn btn-outline" onclick="exportXLSX()" style="justify-content:flex-start;gap:12px;padding:14px 16px"><span style="font-size:18px">📊</span><div style="text-align:left"><div style="font-weight:600">Excel Workbook</div><div style="font-size:11px;color:var(--ink3)">Full matrix with all framework mappings</div></div></button>
+            <button class="btn btn-outline" onclick="exportPDF()" style="justify-content:flex-start;gap:12px;padding:14px 16px"><span style="font-size:18px">📄</span><div style="text-align:left"><div style="font-weight:600">PDF Audit Report</div><div style="font-size:11px;color:var(--ink3)">Professional report for board & auditors</div></div></button>
+            <button class="btn btn-outline" onclick="exportJSON()" style="justify-content:flex-start;gap:12px;padding:14px 16px"><span style="font-size:18px">⚙️</span><div style="text-align:left"><div style="font-weight:600">JSON Data Export</div><div style="font-size:11px;color:var(--ink3)">Machine-readable for GRC platform import</div></div></button>
+            <button class="btn btn-outline" onclick="exportAuditPack()" style="justify-content:flex-start;gap:12px;padding:14px 16px;border-color:var(--accent);color:var(--accent)"><span style="font-size:18px">🗂️</span><div style="text-align:left"><div style="font-weight:600">Full Audit Pack (PDF)</div><div style="font-size:11px;color:var(--ink3)">Matrix + controls + evidence + sign-offs</div></div></button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="font-family:var(--font-serif);font-style:italic;font-size:18px;margin-bottom:16px">Assessment Metadata</div>
+          <div id="reportMeta" style="color:var(--ink3);font-size:13px">No assessment generated yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ STATE ═══
+let S = {
+  apiKey: null, isDemo: false,
+  risks: [], org: '', industry: '', owner: '', reg: '', generatedAt: null,
+  remediations: {}, evidence: [], comments: [], controlTests: {}, approvals: [],
+  activity: []
+};
+
+// ═══ INIT ═══
+function saveKey() {
+  const v = document.getElementById('apiKeyInput').value.trim();
+  if (!v.startsWith('sk-ant-')) { showToast('Invalid key format'); return; }
+  S.apiKey = v;
+  document.getElementById('apiModal').style.display = 'none';
+}
+function demoMode() {
+  S.isDemo = true;
+  document.getElementById('apiModal').style.display = 'none';
+  loadDemo();
+}
+function loadDemo() {
+  S.org = 'Demo Corp — Cloud ERP Migration';
+  S.industry = 'Financial Services'; S.owner = 'Jane Smith, CISO';
+  S.reg = 'india'; S.generatedAt = new Date().toISOString();
+  S.risks = getDemoRisks();
+  S.remediations = {};
+  S.risks.forEach(r => { S.remediations[r.riskId] = { status:'open', dueDate: getDueDate(r.riskRating), notes:'' }; });
+  initControlTests();
+  addActivity('RCM Generated', 'Demo risk matrix loaded with 8 risks', 'done');
+  refreshAll();
+  navigate('dashboard', document.querySelector('.nav-item'));
+  showToast('Demo mode loaded — 8 risks generated');
+}
+
+// ═══ NAVIGATION ═══
+function navigate(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if(el) el.classList.add('active');
+  const titles = {dashboard:'Dashboard',generate:'Generate RCM',matrix:'Risk & Control Matrix',kanban:'Remediation Board',evidence:'Evidence Vault',controls:'Control Testing',collaborate:'Collaboration',reports:'Reports'};
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+  if(page==='matrix') renderMatrix();
+  if(page==='kanban') renderKanban();
+  if(page==='controls') renderControls();
+  if(page==='evidence') renderEvidenceChecklist();
+  if(page==='collaborate') renderCollaborate();
+  if(page==='reports') renderReportMeta();
+}
+
+// ═══ GENERATE ═══
+async function generateRCM() {
+  const process = document.getElementById('g-process').value.trim();
+  if (!process) { showToast('Please describe the process or asset'); return; }
+  S.org = document.getElementById('g-org').value || 'Organization';
+  S.industry = document.getElementById('g-industry').value || 'General';
+  S.owner = document.getElementById('g-owner').value || 'GRC Team';
+  S.reg = document.getElementById('g-reg').value;
+  const count = document.getElementById('g-count').value;
+
+  document.getElementById('genBtn').disabled = true;
+  const statusEl = document.getElementById('genStatus');
+  const statusText = document.getElementById('genStatusText');
+  statusEl.style.display = 'flex';
+
+  const steps = ['Analyzing business context...','Identifying threat vectors...','Mapping to COBIT 2019 domains...','Aligning NIST CSF functions...','Applying NIST RMF steps...','Cross-referencing ISO 27001 annexes...','Generating control recommendations...','Calculating risk scores...','Finalizing matrix...'];
+  let si = 0;
+  const iv = setInterval(() => { if(si<steps.length) statusText.textContent = steps[si++]; }, 800);
+
+  try {
+    if (S.isDemo) {
+      await new Promise(r => setTimeout(r, 4000));
+      S.risks = getDemoRisks().slice(0, parseInt(count));
+    } else {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01'},
+        body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:5000, messages:[{role:'user',content:buildPrompt(process,count)}] })
+      });
+      const data = await resp.json();
+      if(data.error) throw new Error(data.error.message);
+      const raw = data.content[0].text.replace(/```json|```/g,'').trim();
+      S.risks = JSON.parse(raw);
+    }
+    S.generatedAt = new Date().toISOString();
+    S.remediations = {};
+    S.risks.forEach(r => { S.remediations[r.riskId] = { status:'open', dueDate: getDueDate(r.riskRating), notes:'' }; });
+    initControlTests();
+    addActivity('RCM Generated', `${S.risks.length} risks identified for ${S.org}`, 'done');
+    refreshAll();
+    statusEl.style.display = 'none';
+    document.getElementById('genBtn').disabled = false;
+    clearInterval(iv);
+    showToast(`✓ ${S.risks.length} risks generated successfully`);
+    navigate('matrix', document.querySelectorAll('.nav-item')[2]);
+  } catch(e) {
+    clearInterval(iv);
+    statusText.textContent = '✗ Error: ' + e.message;
+    document.getElementById('genBtn').disabled = false;
+    setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+  }
+}
+
+function buildPrompt(process, count) {
+  const reg = {general:'No specific jurisdiction',india:'India (RBI guidelines, SEBI, DPDP Act 2023)',eu:'European Union (GDPR, NIS2, DORA)',us:'United States (HIPAA, SOX, CCPA, NIST)',uk:'United Kingdom (FCA, ICO, NCSC)',gcc:'GCC (SAMA CSF, PDPL)'}[S.reg]||'General';
+  return `You are a senior GRC consultant. Generate exactly ${count} realistic risks for this context:
+Organization: ${S.org} | Industry: ${S.industry} | Jurisdiction: ${reg}
+Scope: ${process}
+
+Return ONLY valid JSON array, no markdown:
+[{"riskId":"RSK-001","riskDescription":"Detailed description","category":"Cybersecurity|Operational|Compliance|Strategic|Financial","cobitDomain":"e.g. APO12 - Manage Risk","cobitProcess":"APO12.01","nistCsf":"e.g. Identify (ID.RA-1)","nistRmf":"e.g. Categorize (Step 1)","iso27001":"e.g. A.9.4 - System access control","regulatoryRef":"specific regulation reference","likelihood":3,"impact":4,"riskScore":12,"riskRating":"High","businessImpact":"Financial/reputational impact description","suggestedControls":["Control 1","Control 2","Control 3"],"testingProcedure":["How to test control 1","How to test control 2","How to test control 3"],"evidenceRequired":["Evidence type 1","Evidence type 2"],"controlOwner":"CISO","residualRisk":"Medium","remediationEffort":"Low|Medium|High"}]`;
+}
+
+// ═══ RENDER MATRIX ═══
+function renderMatrix() {
+  const body = document.getElementById('matrixBody');
+  if (!S.risks.length) { body.innerHTML = '<tr><td colspan="15" style="text-align:center;color:var(--ink3);padding:40px">No risks generated yet</td></tr>'; return; }
+  document.getElementById('matrixTitle').textContent = S.org + ' — Risk & Control Matrix';
+  body.innerHTML = S.risks.map(r => {
+    const cls = rCls(r.riskScore);
+    const rem = S.remediations[r.riskId] || {status:'open'};
+    return `<tr>
+      <td class="td-mono" style="cursor:pointer;color:var(--accent)" onclick="openPanel('${r.riskId}')">${r.riskId}</td>
+      <td style="max-width:200px;font-size:12px">${r.riskDescription}</td>
+      <td style="font-size:12px">${r.category||''}</td>
+      <td><span class="fw fw-cobit">${r.cobitDomain||'-'}</span></td>
+      <td><span class="fw fw-nistcsf">${r.nistCsf||'-'}</span></td>
+      <td><span class="fw fw-nistrmf">${r.nistRmf||'-'}</span></td>
+      <td><span class="fw fw-iso">${r.iso27001||'-'}</span></td>
+      <td class="td-mono" style="text-align:center">${r.likelihood}</td>
+      <td class="td-mono" style="text-align:center">${r.impact}</td>
+      <td class="td-mono" style="text-align:center;font-weight:600">${r.riskScore}</td>
+      <td><span class="badge b-${cls}">${r.riskRating}</span></td>
+      <td style="font-size:11px;color:var(--ink3)">${(r.suggestedControls||[]).length} controls</td>
+      <td style="font-size:12px;white-space:nowrap">${r.controlOwner||'-'}</td>
+      <td><span class="badge b-${rem.status==='closed'?'done':rem.status==='in-progress'?'progress':rem.status==='in-review'?'progress':'open'}">${rem.status}</span></td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-ghost btn-sm" onclick="openPanel('${r.riskId}')" style="font-size:11px">Detail</button>
+        <button class="btn btn-ghost btn-sm" onclick="advanceStatus('${r.riskId}')" style="font-size:11px">→</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  renderMatrixStats();
+  document.getElementById('matrixBadge').textContent = S.risks.length;
+}
+
+function renderMatrixStats() {
+  const counts = {critical:0,high:0,medium:0,low:0};
+  S.risks.forEach(r => counts[rCls(r.riskScore)]++);
+  document.getElementById('matrixStats').innerHTML = `
+    <div class="stat-card stat-critical"><div class="stat-label">Critical</div><div class="stat-num">${counts.critical}</div></div>
+    <div class="stat-card stat-high"><div class="stat-label">High</div><div class="stat-num">${counts.high}</div></div>
+    <div class="stat-card stat-medium"><div class="stat-label">Medium</div><div class="stat-num">${counts.medium}</div></div>
+    <div class="stat-card stat-low"><div class="stat-label">Low</div><div class="stat-num">${counts.low}</div></div>`;
+}
+
+// ═══ DETAIL PANEL ═══
+function openPanel(riskId) {
+  const r = S.risks.find(x => x.riskId === riskId);
+  if (!r) return;
+  const rem = S.remediations[riskId] || {status:'open'};
+  const cls = rCls(r.riskScore);
+  document.getElementById('panelRiskId').textContent = r.riskId;
+  document.getElementById('panelBody').innerHTML = `
+    <div class="panel-section">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+        <div class="score-ring ring-${cls}">${r.riskScore}</div>
+        <div><span class="badge b-${cls}" style="font-size:12px">${r.riskRating} Risk</span><div style="font-family:var(--font-mono);font-size:10px;color:var(--ink3);margin-top:4px">L:${r.likelihood} × I:${r.impact} = ${r.riskScore}</div></div>
+      </div>
+      <div style="font-size:13px;line-height:1.6;color:var(--ink2)">${r.riskDescription}</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">Framework Mapping</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+        <div><div class="card-label">COBIT 2019</div><span class="fw fw-cobit">${r.cobitDomain||'-'}</span></div>
+        <div><div class="card-label">NIST CSF</div><span class="fw fw-nistcsf">${r.nistCsf||'-'}</span></div>
+        <div><div class="card-label">NIST RMF</div><span class="fw fw-nistrmf">${r.nistRmf||'-'}</span></div>
+        <div><div class="card-label">ISO 27001</div><span class="fw fw-iso">${r.iso27001||'-'}</span></div>
+        ${r.regulatoryRef?`<div class="col-span-2"><div class="card-label">Regulatory Ref</div><span style="font-family:var(--font-mono);font-size:10px;color:var(--amber)">${r.regulatoryRef}</span></div>`:''}
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">Suggested Controls</div>
+      <div>${(r.suggestedControls||[]).map((c,i) => `<div class="control-check">
+        <div class="check-box ${S.controlTests[riskId+'_'+i]?'checked':'}" onclick="toggleControl('${riskId}',${i})">${S.controlTests[riskId+'_'+i]?'✓':''}</div>
+        <div class="check-label">${c}</div>
+      </div>`).join('')}</div>
+    </div>
+    ${r.evidenceRequired?`<div class="panel-section">
+      <div class="panel-section-title">Evidence Required</div>
+      <div style="font-size:12px;color:var(--ink3)">${(r.evidenceRequired||[]).map(e=>`<div style="padding:4px 0;border-bottom:1px solid var(--border)">→ ${e}</div>`).join('')}</div>
+    </div>`:''}
+    ${r.businessImpact?`<div class="panel-section">
+      <div class="panel-section-title">Business Impact</div>
+      <div style="font-size:13px;color:var(--ink2)">${r.businessImpact}</div>
+    </div>`:''}
+    <div class="panel-section">
+      <div class="panel-section-title">Remediation Status</div>
+      <select onchange="updateStatus('${riskId}',this.value)" style="margin-bottom:10px">
+        <option value="open" ${rem.status==='open'?'selected':''}>Open</option>
+        <option value="in-progress" ${rem.status==='in-progress'?'selected':''}>In Progress</option>
+        <option value="in-review" ${rem.status==='in-review'?'selected':''}>In Review</option>
+        <option value="closed" ${rem.status==='closed'?'selected':''}>Closed</option>
+      </select>
+      <div class="card-label">Due Date</div>
+      <input type="date" value="${rem.dueDate||''}" onchange="updateDue('${riskId}',this.value)" style="margin-bottom:10px"/>
+      <div class="card-label">Notes</div>
+      <textarea placeholder="Remediation notes..." onchange="updateNotes('${riskId}',this.value)">${rem.notes||''}</textarea>
+    </div>`;
+  document.getElementById('detailPanel').classList.add('open');
+}
+function closePanel() { document.getElementById('detailPanel').classList.remove('open'); }
+function toggleControl(riskId, idx) {
+  const key = riskId+'_'+idx;
+  S.controlTests[key] = !S.controlTests[key];
+  openPanel(riskId);
+  updateComplianceScore();
+  addActivity('Control Updated', `Control ${idx+1} for ${riskId} ${S.controlTests[key]?'verified':'unverified'}`, S.controlTests[key]?'done':'open');
+}
+function updateStatus(riskId, val) {
+  S.remediations[riskId].status = val;
+  renderKanban(); renderMatrix(); refreshDash();
+  addActivity('Status Changed', `${riskId} moved to ${val}`, val==='closed'?'done':val==='in-progress'?'open':'open');
+}
+function updateDue(riskId, val) { S.remediations[riskId].dueDate = val; }
+function updateNotes(riskId, val) { S.remediations[riskId].notes = val; }
+function advanceStatus(riskId) {
+  const order = ['open','in-progress','in-review','closed'];
+  const cur = S.remediations[riskId]?.status || 'open';
+  const next = order[Math.min(order.indexOf(cur)+1, order.length-1)];
+  S.remediations[riskId].status = next;
+  renderMatrix(); renderKanban(); refreshDash();
+  showToast(`${riskId} → ${next}`);
+}
+
+// ═══ KANBAN ═══
+function renderKanban() {
+  const cols = {open:[], 'in-progress':[], 'in-review':[], closed:[]};
+  S.risks.forEach(r => {
+    const rem = S.remediations[r.riskId] || {status:'open'};
+    if(cols[rem.status]) cols[rem.status].push({...r, rem});
+  });
+  const ids = {open:'k-open','in-progress':'k-progress','in-review':'k-review',closed:'k-closed'};
+  const counts = {open:'kc-open','in-progress':'kc-progress','in-review':'kc-review',closed:'kc-closed'};
+  Object.entries(cols).forEach(([status, risks]) => {
+    document.getElementById(ids[status]).innerHTML = risks.length ? risks.map(r => {
+      const cls = rCls(r.riskScore);
+      const overdue = r.rem.dueDate && new Date(r.rem.dueDate) < new Date();
+      return `<div class="kanban-card" onclick="openPanel('${r.riskId}')">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span class="badge b-${cls}" style="font-size:9px">${r.riskRating}</span></div>
+        <div class="kanban-card-title">${r.riskDescription.substring(0,70)}...</div>
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--ink3);margin:4px 0">${r.category}</div>
+        <div class="kanban-card-meta">
+          <span class="kanban-owner">${r.controlOwner||'-'}</span>
+          <span class="kanban-due ${overdue?'overdue':''}">${r.rem.dueDate||'No due date'}</span>
+        </div>
+      </div>`;
+    }).join('') : `<div style="text-align:center;color:var(--ink3);font-size:12px;padding:16px;border:1px dashed var(--border);border-radius:8px">Empty</div>`;
+    document.getElementById(counts[status]).textContent = risks.length;
+  });
+  document.getElementById('kanbanBadge').textContent = S.risks.filter(r => (S.remediations[r.riskId]?.status||'open') !== 'closed').length;
+}
+
+// ═══ CONTROLS ═══
+function initControlTests() {
+  S.risks.forEach(r => (r.suggestedControls||[]).forEach((_,i) => { if(S.controlTests[r.riskId+'_'+i]===undefined) S.controlTests[r.riskId+'_'+i]=false; }));
+}
+function renderControls() {
+  if (!S.risks.length) return;
+  updateComplianceScore();
+  document.getElementById('controlTestList').innerHTML = S.risks.map(r => {
+    const cls = rCls(r.riskScore);
+    const tested = (r.suggestedControls||[]).filter((_,i) => S.controlTests[r.riskId+'_'+i]).length;
+    const total = (r.suggestedControls||[]).length;
+    return `<div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <span class="badge b-${cls}">${r.riskRating}</span>
+        <span class="td-mono">${r.riskId}</span>
+        <span style="font-size:13px;font-weight:600">${r.riskDescription.substring(0,60)}...</span>
+        <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:${tested===total?'var(--accent2)':'var(--ink3)'}">${tested}/${total} verified</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-bar progress-${cls}" style="width:${total?Math.round(tested/total*100):0}%"></div></div>
+      <div style="margin-top:12px">${(r.suggestedControls||[]).map((c,i) => {
+        const checked = S.controlTests[r.riskId+'_'+i];
+        const proc = r.testingProcedure?.[i] || 'Verify implementation and collect evidence';
+        return `<div class="control-check">
+          <div class="check-box ${checked?'checked':''}" onclick="toggleControl('${r.riskId}',${i})">${checked?'✓':''}</div>
+          <div style="flex:1"><div class="check-label">${c}</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--ink3);margin-top:3px">Test: ${proc}</div></div>
+          <span class="badge ${checked?'b-done':'b-open'}" style="font-size:9px">${checked?'Verified':'Pending'}</span>
+        </div>`;
+      }).join('')}</div>
+    </div>`;
+  }).join('');
+  renderFWCoverage();
+}
+function updateComplianceScore() {
+  const total = Object.keys(S.controlTests).length;
+  const done = Object.values(S.controlTests).filter(Boolean).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('complianceScore').textContent = pct + '%';
+  document.getElementById('complianceBar').style.width = pct + '%';
+  document.getElementById('complianceDetail').textContent = `${done} of ${total} controls verified`;
+}
+function renderFWCoverage() {
+  const fws = [{name:'COBIT 2019',key:'cobit',cls:'fw-cobit'},{name:'NIST CSF',key:'nistcsf',cls:'fw-nistcsf'},{name:'NIST RMF',key:'nistrmf',cls:'fw-nistrmf'},{name:'ISO 27001',key:'iso',cls:'fw-iso'}];
+  const total = Object.keys(S.controlTests).length / 4 || 1;
+  const done = Object.values(S.controlTests).filter(Boolean).length;
+  const pct = Math.round(done/Object.keys(S.controlTests).length*100)||0;
+  document.getElementById('fwCoverage').innerHTML = fws.map(fw => `
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span class="fw ${fw.cls}">${fw.name}</span>
+        <span style="font-family:var(--font-mono);font-size:10px;color:var(--ink3)">${pct}%</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%;background:var(--accent2)"></div></div>
+    </div>`).join('');
+}
+
+// ═══ EVIDENCE ═══
+function handleFileUpload(e) {
+  Array.from(e.target.files).forEach(f => {
+    S.evidence.push({ name:f.name, size: formatSize(f.size), type:f.type, uploadedAt: new Date().toLocaleString(), status:'uploaded' });
+    addActivity('Evidence Uploaded', f.name + ' added to vault', 'done');
+  });
+  renderEvidenceList();
+  showToast(`${e.target.files.length} file(s) uploaded`);
+}
+function formatSize(b) { return b>1024*1024?(b/1024/1024).toFixed(1)+'MB':(b/1024).toFixed(0)+'KB'; }
+function renderEvidenceList() {
+  const el = document.getElementById('evidenceList');
+  if (!S.evidence.length) { el.innerHTML='<div style="color:var(--ink3);font-size:13px;text-align:center;padding:20px">No evidence uploaded yet</div>'; return; }
+  const icons = {'application/pdf':'📄','image/png':'🖼️','image/jpeg':'🖼️','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'📊'};
+  el.innerHTML = S.evidence.map((ev,i) => `
+    <div class="evidence-item">
+      <div class="evidence-icon">${icons[ev.type]||'📎'}</div>
+      <div><div class="evidence-name">${ev.name}</div><div class="evidence-meta">${ev.size} · ${ev.uploadedAt}</div></div>
+      <div class="evidence-status"><span class="badge b-done">Uploaded</span></div>
+    </div>`).join('');
+}
+function renderEvidenceChecklist() {
+  renderEvidenceList();
+  const el = document.getElementById('evidenceChecklist');
+  if (!S.risks.length) return;
+  const allEvidence = [...new Set(S.risks.flatMap(r => r.evidenceRequired||['Implementation screenshots','Audit logs','Test results']))];
+  el.innerHTML = allEvidence.map(ev => {
+    const uploaded = S.evidence.some(e => e.name.toLowerCase().includes(ev.toLowerCase().split(' ')[0]));
+    return `<div class="control-check">
+      <div class="check-box ${uploaded?'checked':''}">${uploaded?'✓':''}</div>
+      <div class="check-label">${ev}</div>
+      <span class="badge ${uploaded?'b-done':'b-open'}" style="font-size:9px">${uploaded?'Uploaded':'Required'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══ COLLABORATE ═══
+function addComment() {
+  const name = document.getElementById('c-name').value.trim();
+  const role = document.getElementById('c-role').value;
+  const text = document.getElementById('c-text').value.trim();
+  if (!name || !text) { showToast('Name and comment required'); return; }
+  S.comments.push({ name, role, text, time: new Date().toLocaleString(), avatar: name.charAt(0).toUpperCase() });
+  document.getElementById('c-text').value = '';
+  renderComments();
+  addActivity('Comment Added', `${name} (${role}) posted a review comment`, 'done');
+  showToast('Comment posted');
+}
+function renderComments() {
+  const el = document.getElementById('commentThread');
+  if (!S.comments.length) { el.innerHTML='<div style="color:var(--ink3);font-size:13px">No comments yet</div>'; return; }
+  const colors = ['#c8401a','#d4860a','#2d6a4f','#1e3a5f','#0d7377'];
+  el.innerHTML = S.comments.map((c,i) => `
+    <div class="comment">
+      <div class="comment-avatar" style="background:${colors[i%colors.length]}">${c.avatar}</div>
+      <div class="comment-body">
+        <div class="comment-author">${c.name} <span style="font-weight:400;color:var(--ink3);font-size:11px">· ${c.role}</span></div>
+        <div class="comment-text">${c.text}</div>
+        <div class="comment-time">${c.time}</div>
+      </div>
+    </div>`).join('');
+}
+function renderCollaborate() {
+  renderComments();
+  const sp = document.getElementById('signoffPanel');
+  if (!S.risks.length) return;
+  const approved = S.approvals.length > 0;
+  sp.innerHTML = `
+    <div style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">${S.org}</div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink3)">${S.risks.length} risks · Generated ${S.generatedAt?new Date(S.generatedAt).toLocaleDateString():'N/A'}</div>
+    </div>
+    ${S.approvals.map(a => `<div style="background:rgba(45,106,79,0.08);border:1px solid rgba(45,106,79,0.2);border-radius:8px;padding:10px;margin-bottom:8px;font-size:12px">
+      <div style="font-weight:600;color:var(--accent2)">✓ Approved by ${a.name}</div>
+      <div style="color:var(--ink3);font-family:var(--font-mono);font-size:10px">${a.role} · ${a.time}</div>
+    </div>`).join('')}
+    <div class="field"><label class="field-label">Approver Name</label><input type="text" id="ap-name" placeholder="Your name"/></div>
+    <div class="field"><label class="field-label">Role</label><select id="ap-role"><option>CISO</option><option>Risk Manager</option><option>Compliance Officer</option><option>CTO</option><option>Board Member</option></select></div>
+    <button class="btn btn-success" onclick="signOff()" style="width:100%">✓ Formally Approve Assessment</button>`;
+}
+function signOff() {
+  const name = document.getElementById('ap-name')?.value.trim();
+  if (!name) { showToast('Enter approver name'); return; }
+  const role = document.getElementById('ap-role')?.value;
+  S.approvals.push({ name, role, time: new Date().toLocaleString() });
+  renderCollaborate();
+  addActivity('Assessment Approved', `${name} (${role}) formally approved the assessment`, 'done');
+  showToast('✓ Assessment approved and signed');
+}
+
+// ═══ DASHBOARD ═══
+function refreshDash() {
+  if (!S.risks.length) return;
+  const counts = {critical:0,high:0,medium:0,low:0};
+  S.risks.forEach(r => counts[rCls(r.riskScore)]++);
+  document.getElementById('ds-critical').textContent = counts.critical;
+  document.getElementById('ds-high').textContent = counts.high;
+  document.getElementById('ds-medium').textContent = counts.medium;
+  document.getElementById('ds-low').textContent = counts.low;
+  renderHeatmap();
+  renderCoverage();
+  renderRemProgress();
+  renderActivity();
+  document.getElementById('topbarInfo').textContent = S.org ? S.org.substring(0,40) : '';
+}
+function renderHeatmap() {
+  const cells = [];
+  for (let i=5;i>=1;i--) for(let j=1;j<=5;j++) {
+    const score = i*j;
+    const level = score>=20?4:score>=12?3:score>=8?2:score>=4?1:0;
+    const count = S.risks.filter(r=>r.likelihood===j&&r.impact===i).length;
+    cells.push(`<div class="heatmap-cell hm-${level}" title="L:${j} I:${i} Score:${score}">${count||''}</div>`);
+  }
+  document.getElementById('heatmap').innerHTML = cells.join('');
+}
+function renderCoverage() {
+  const fws = [
+    {label:'COBIT',key:'cobitDomain',color:'var(--accent3)'},
+    {label:'NIST CSF',key:'nistCsf',color:'var(--teal)'},
+    {label:'NIST RMF',key:'nistRmf',color:'var(--accent2)'},
+    {label:'ISO 27001',key:'iso27001',color:'var(--amber)'}
+  ];
+  document.getElementById('coverageChart').innerHTML = fws.map(fw => {
+    const covered = S.risks.filter(r=>r[fw.key]&&r[fw.key]!=='-').length;
+    const pct = S.risks.length ? Math.round(covered/S.risks.length*100) : 0;
+    return `<div class="bar-row">
+      <div class="bar-label">${fw.label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${fw.color}">${pct}%</div></div>
+    </div>`;
+  }).join('');
+}
+function renderRemProgress() {
+  const total = S.risks.length;
+  if (!total) return;
+  const closed = S.risks.filter(r=>(S.remediations[r.riskId]?.status||'open')==='closed').length;
+  const inProg = S.risks.filter(r=>(S.remediations[r.riskId]?.status||'open')==='in-progress').length;
+  const pct = Math.round(closed/total*100);
+  document.getElementById('remProgress').innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--ink3);margin-bottom:6px">
+      <span>${closed}/${total} closed</span><span>${pct}% complete</span>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar progress-medium" style="width:${pct}%"></div></div>
+    <div style="display:flex;gap:12px;margin-top:10px;font-size:12px">
+      <span style="color:var(--ink3)">⬤ Open: ${total-closed-inProg}</span>
+      <span style="color:var(--amber)">⬤ In Progress: ${inProg}</span>
+      <span style="color:var(--accent2)">⬤ Closed: ${closed}</span>
+    </div>`;
+}
+function renderActivity() {
+  const el = document.getElementById('activityFeed');
+  if (!S.activity.length) return;
+  el.innerHTML = S.activity.slice(-6).reverse().map(a => `
+    <div class="tl-item">
+      <div class="tl-dot tl-dot-${a.type}"></div>
+      <div class="tl-title">${a.title}</div>
+      <div class="tl-meta">${a.desc} · ${a.time}</div>
+    </div>`).join('');
+}
+function renderReportMeta() {
+  if (!S.risks.length) return;
+  const counts = {critical:0,high:0,medium:0,low:0};
+  S.risks.forEach(r => counts[rCls(r.riskScore)]++);
+  const totalControls = Object.keys(S.controlTests).length;
+  const testedControls = Object.values(S.controlTests).filter(Boolean).length;
+  document.getElementById('reportMeta').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--ink3)">Organization</span><span style="font-weight:600">${S.org}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--ink3)">Industry</span><span>${S.industry}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--ink3)">Assessment Owner</span><span>${S.owner}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--ink3)">Generated</span><span style="font-family:var(--font-mono);font-size:11px">${S.generatedAt?new Date(S.generatedAt).toLocaleString():'N/A'}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--ink3)">Total Risks</span><span>${S.risks.length} (${counts.critical} Critical, ${counts.high} High)</span></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--ink3)">Controls Coverage</span><span>${testedControls}/${totalControls} verified</span></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--ink3)">Evidence Files</span><span>${S.evidence.length} uploaded</span></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--ink3)">Approvals</span><span style="color:${S.approvals.length?'var(--accent2)':'var(--ink3)'}">${S.approvals.length?S.approvals.map(a=>a.name).join(', '):'Pending'}</span></div>
+    </div>`;
+}
+
+// ═══ EXPORTS ═══
+function exportXLSX() {
+  if (!S.risks.length) { showToast('No data to export'); return; }
+  const rows = S.risks.map(r => ({
+    'Risk ID':r.riskId,'Description':r.riskDescription,'Category':r.category,
+    'COBIT Domain':r.cobitDomain,'COBIT Process':r.cobitProcess,
+    'NIST CSF':r.nistCsf,'NIST RMF':r.nistRmf,'ISO 27001':r.iso27001,
+    'Regulatory Ref':r.regulatoryRef||'',
+    'Likelihood':r.likelihood,'Impact':r.impact,'Risk Score':r.riskScore,'Risk Rating':r.riskRating,
+    'Business Impact':r.businessImpact||'',
+    'Controls':(r.suggestedControls||[]).join(' | '),
+    'Testing Procedure':(r.testingProcedure||[]).join(' | '),
+    'Evidence Required':(r.evidenceRequired||[]).join(' | '),
+    'Control Owner':r.controlOwner,'Residual Risk':r.residualRisk,
+    'Remediation Effort':r.remediationEffort||'',
+    'Status':S.remediations[r.riskId]?.status||'open',
+    'Due Date':S.remediations[r.riskId]?.dueDate||'',
+    'Controls Verified': Object.keys(S.controlTests).filter(k=>k.startsWith(r.riskId)&&S.controlTests[k]).length + '/' + (r.suggestedControls||[]).length
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [10,50,15,25,15,22,18,30,25,12,12,12,12,40,50,50,40,20,15,15,15,15,15].map(w=>({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Risk Control Matrix');
+  const metaRows = [{Key:'Organization',Value:S.org},{Key:'Industry',Value:S.industry},{Key:'Owner',Value:S.owner},{Key:'Generated',Value:S.generatedAt},{Key:'Total Risks',Value:S.risks.length},{Key:'Frameworks',Value:'COBIT 2019, NIST CSF, NIST RMF, ISO 27001'}];
+  const ws2 = XLSX.utils.json_to_sheet(metaRows);
+  XLSX.utils.book_append_sheet(wb, ws2, 'Metadata');
+  XLSX.writeFile(wb, `AEGIS_RCM_${S.org.replace(/[^a-z0-9]/gi,'_')}.xlsx`);
+  showToast('Excel exported');
+}
+function exportPDF() {
+  if (!S.risks.length) { showToast('No data to export'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a3' });
+  doc.setFont('helvetica','bold'); doc.setFontSize(20);
+  doc.setTextColor(26,23,20);
+  doc.text('AEGIS GRC — Risk & Control Matrix', 14, 18);
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(122,114,101);
+  doc.text(`${S.org} | ${S.industry} | Owner: ${S.owner} | ${new Date().toLocaleDateString()}`, 14, 26);
+  doc.text(`Frameworks: COBIT 2019 · NIST CSF · NIST RMF · ISO 27001`, 14, 32);
+  const cols = ['ID','Description','Category','COBIT','NIST CSF','NIST RMF','ISO 27001','L','I','Score','Rating','Controls','Owner','Status'];
+  const rows = S.risks.map(r => [r.riskId,r.riskDescription?.substring(0,55),r.category,r.cobitDomain?.substring(0,18),r.nistCsf?.substring(0,18),r.nistRmf?.substring(0,15),r.iso27001?.substring(0,22),r.likelihood,r.impact,r.riskScore,r.riskRating,(r.suggestedControls||[]).length+' ctrl',r.controlOwner,S.remediations[r.riskId]?.status||'open']);
+  doc.autoTable({ head:[cols], body:rows, startY:38,
+    styles:{fontSize:7,cellPadding:3},
+    headStyles:{fillColor:[26,23,20],textColor:[200,64,26],fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[249,247,243]},
+    bodyStyles:{textColor:[26,23,20]}
+  });
+  if (S.approvals.length) {
+    const y = doc.lastAutoTable.finalY + 10;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(26,23,20);
+    doc.text('Formal Approvals', 14, y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    S.approvals.forEach((a,i) => doc.text(`✓ ${a.name} (${a.role}) — ${a.time}`, 14, y+6+(i*6)));
+  }
+  doc.save(`AEGIS_RCM_${S.org.replace(/[^a-z0-9]/gi,'_')}.pdf`);
+  showToast('PDF exported');
+}
+function exportJSON() {
+  if (!S.risks.length) { showToast('No data to export'); return; }
+  const payload = {
+    metadata:{ tool:'AEGIS GRC Platform', version:'2.0', generated:S.generatedAt, organization:S.org, industry:S.industry, owner:S.owner, jurisdiction:S.reg, frameworks:['COBIT 2019','NIST CSF','NIST RMF','ISO 27001'] },
+    risks: S.risks.map(r => ({...r, remediationStatus:S.remediations[r.riskId]?.status||'open', dueDate:S.remediations[r.riskId]?.dueDate||null, controlsVerified:Object.keys(S.controlTests).filter(k=>k.startsWith(r.riskId)&&S.controlTests[k]).length})),
+    evidence: S.evidence, approvals: S.approvals, comments: S.comments,
+    summary:{ totalRisks:S.risks.length, evidenceFiles:S.evidence.length, approvals:S.approvals.length }
+  };
+  const blob = new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`AEGIS_RCM_${S.org.replace(/[^a-z0-9]/gi,'_')}.json`; a.click();
+  showToast('JSON exported');
+}
+function exportAuditPack() {
+  if (!S.risks.length) { showToast('No data to export'); return; }
+  exportPDF();
+  setTimeout(() => showToast('Full Audit Pack exported'), 500);
+}
+
+// ═══ HELPERS ═══
+function rCls(score) { return score>=20?'critical':score>=12?'high':score>=6?'medium':'low'; }
+function getDueDate(rating) {
+  const d = new Date();
+  const days = {Critical:7,High:14,Medium:30,Low:60}[rating]||30;
+  d.setDate(d.getDate()+days); return d.toISOString().split('T')[0];
+}
+function addActivity(title, desc, type) {
+  S.activity.push({title,desc,type,time:new Date().toLocaleTimeString()});
+  renderActivity();
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('visible');
+  setTimeout(() => t.classList.remove('visible'), 2800);
+}
+function refreshAll() { refreshDash(); renderMatrix(); renderKanban(); updateComplianceScore(); }
+
+// ═══ DEMO DATA ═══
+function getDemoRisks() {
+  return [
+    {riskId:"RSK-001",riskDescription:"Unauthorized access to cloud-hosted customer PII due to misconfigured IAM roles and absent multi-factor authentication on privileged accounts",category:"Cybersecurity",cobitDomain:"APO12 - Manage Risk",cobitProcess:"APO12.01",nistCsf:"Identify (ID.RA-1)",nistRmf:"Select (Step 2)",iso27001:"A.9.4 - System and application access",regulatoryRef:"RBI IT Framework 7.1 / DPDP Act §8",likelihood:4,impact:5,riskScore:20,riskRating:"Critical",businessImpact:"Regulatory fines up to ₹250Cr under DPDP Act; reputational damage; customer churn",suggestedControls:["Implement MFA on all privileged accounts","Enable AWS CloudTrail and GuardDuty","Conduct quarterly IAM access reviews"],testingProcedure:["Query IAM to verify 100% MFA enrollment","Review CloudTrail for anomalous access patterns","Pull access review completion reports"],evidenceRequired:["IAM MFA enrollment report","CloudTrail configuration screenshot","Quarterly access review sign-off"],controlOwner:"CISO",residualRisk:"Medium",remediationEffort:"Medium"},
+    {riskId:"RSK-002",riskDescription:"Data breach during migration phase due to unencrypted data transfer between legacy on-premises systems and cloud infrastructure over public internet",category:"Cybersecurity",cobitDomain:"DSS05 - Manage Security Services",cobitProcess:"DSS05.02",nistCsf:"Protect (PR.DS-2)",nistRmf:"Implement (Step 3)",iso27001:"A.10.1 - Cryptographic controls",regulatoryRef:"RBI Cybersecurity Framework §5 / ISO 27001 A.10",likelihood:3,impact:5,riskScore:15,riskRating:"High",businessImpact:"Customer data exposure; potential class action; RBI audit trigger",suggestedControls:["Enforce TLS 1.3 for all data in transit","Implement end-to-end encryption for PII","Deploy DLP solution on migration pipeline"],testingProcedure:["Run SSL Labs test on all endpoints","Verify DLP policy activation and alerts","Test data interception on migration channel"],evidenceRequired:["TLS configuration report","DLP policy documentation","Encryption key management records"],controlOwner:"IT Security Manager",residualRisk:"Low",remediationEffort:"High"},
+    {riskId:"RSK-003",riskDescription:"Service outage due to single cloud provider dependency with no disaster recovery plan, risking business continuity for 24/7 banking operations",category:"Operational",cobitDomain:"DSS04 - Manage Continuity",cobitProcess:"DSS04.02",nistCsf:"Recover (RC.RP-1)",nistRmf:"Monitor (Step 6)",iso27001:"A.17.1 - Information security continuity",regulatoryRef:"RBI BCM Guidelines 2019",likelihood:3,impact:4,riskScore:12,riskRating:"High",businessImpact:"Revenue loss of ₹50L/hr during outage; SLA penalties; regulatory non-compliance",suggestedControls:["Implement multi-region active-active architecture","Define RTO 4hr / RPO 1hr in SLAs","Conduct DR test every 6 months"],testingProcedure:["Execute tabletop DR exercise","Measure actual RTO/RPO in failover test","Review SLA documentation for DR clauses"],evidenceRequired:["DR test report with RTO/RPO results","SLA documentation","Multi-region architecture diagram"],controlOwner:"IT Director",residualRisk:"Medium",remediationEffort:"High"},
+    {riskId:"RSK-004",riskDescription:"Non-compliance with DPDP Act 2023 data localization requirements due to cross-border replication of Indian citizen data to non-India cloud regions",category:"Compliance",cobitDomain:"MEA03 - Manage Compliance",cobitProcess:"MEA03.01",nistCsf:"Identify (ID.GV-3)",nistRmf:"Categorize (Step 1)",iso27001:"A.18.1 - Compliance with legal requirements",regulatoryRef:"DPDP Act 2023 §16 / RBI Storage Localization",likelihood:4,impact:4,riskScore:16,riskRating:"Critical",businessImpact:"Fines up to ₹250Cr; license revocation risk; mandatory RBI audit",suggestedControls:["Configure AWS region lock to ap-south-1 (Mumbai)","Map all PII data flows for localization compliance","Engage DPO for DPDP compliance program"],testingProcedure:["Audit cloud resource deployment regions","Review data flow diagrams for cross-border transfers","DPO sign-off on localization compliance"],evidenceRequired:["AWS Config region compliance report","Data flow mapping document","DPO compliance certification"],controlOwner:"Data Protection Officer",residualRisk:"Low",remediationEffort:"Medium"},
+    {riskId:"RSK-005",riskDescription:"Insider threat from privileged database administrators exfiltrating customer financial records during the migration window with elevated access",category:"Cybersecurity",cobitDomain:"DSS06 - Manage Business Process Controls",cobitProcess:"DSS06.03",nistCsf:"Detect (DE.CM-3)",nistRmf:"Monitor (Step 6)",iso27001:"A.12.4 - Logging and monitoring",regulatoryRef:"SEBI Cybersecurity Circular 2023",likelihood:2,impact:5,riskScore:10,riskRating:"Medium",businessImpact:"Customer financial loss; SEBI enforcement action; reputational collapse",suggestedControls:["Implement User Behavior Analytics (UBA)","Enforce least-privilege access with JIT provisioning","Enable SIEM alerting for bulk data access"],testingProcedure:["Verify UBA alerts trigger on anomalous bulk queries","Test JIT access workflow end-to-end","Review SIEM rule coverage for insider threat scenarios"],evidenceRequired:["UBA configuration and alert log","JIT access approval records","SIEM rule documentation"],controlOwner:"Security Operations Center",residualRisk:"Low",remediationEffort:"Medium"},
+    {riskId:"RSK-006",riskDescription:"Third-party payment gateway API vulnerabilities exposing the system to supply chain attacks and unauthorized transaction manipulation",category:"Cybersecurity",cobitDomain:"APO10 - Manage Vendors",cobitProcess:"APO10.03",nistCsf:"Identify (ID.SC-3)",nistRmf:"Assess (Step 4)",iso27001:"A.15.2 - Supplier service delivery management",regulatoryRef:"RBI PA/PG Guidelines 2021",likelihood:3,impact:3,riskScore:9,riskRating:"Medium",businessImpact:"Transaction fraud; PCI-DSS non-compliance; customer trust erosion",suggestedControls:["Conduct annual vendor security assessments","Implement API gateway with WAF and rate limiting","Monitor third-party SBOMs for vulnerability disclosures"],testingProcedure:["Review vendor SOC 2 Type II reports","Run API penetration test against payment endpoints","Scan third-party dependencies with SCA tool"],evidenceRequired:["Vendor security assessment report","WAF configuration documentation","Penetration test findings and remediation"],controlOwner:"Vendor Risk Manager",residualRisk:"Low",remediationEffort:"Medium"},
+    {riskId:"RSK-007",riskDescription:"Ransomware attack encrypting cloud-based production workloads due to insufficient endpoint protection and absence of immutable backup strategy",category:"Cybersecurity",cobitDomain:"DSS05 - Manage Security Services",cobitProcess:"DSS05.04",nistCsf:"Respond (RS.MI-2)",nistRmf:"Implement (Step 3)",iso27001:"A.12.3 - Information backup",regulatoryRef:"RBI Cybersecurity Framework §8",likelihood:2,impact:5,riskScore:10,riskRating:"Medium",businessImpact:"Complete data loss; ransom demand; regulatory sanctions; operational shutdown",suggestedControls:["Deploy immutable S3 Object Lock backups (3-2-1 rule)","Implement CrowdStrike EDR on all endpoints","Run quarterly ransomware tabletop exercises"],testingProcedure:["Verify Object Lock policy is active on backup buckets","Test EDR detection against simulated ransomware behavior","Review tabletop exercise reports and action items"],evidenceRequired:["S3 Object Lock policy screenshot","EDR coverage report","Tabletop exercise completion certificate"],controlOwner:"CISO",residualRisk:"Low",remediationEffort:"Medium"},
+    {riskId:"RSK-008",riskDescription:"Configuration drift in cloud infrastructure leading to public S3 buckets and open security groups exposing sensitive systems to the internet",category:"Operational",cobitDomain:"BAI10 - Manage Configuration",cobitProcess:"BAI10.01",nistCsf:"Protect (PR.IP-1)",nistRmf:"Implement (Step 3)",iso27001:"A.12.1 - Operational procedures",regulatoryRef:"CIS AWS Benchmark v2.0",likelihood:4,impact:2,riskScore:8,riskRating:"Medium",businessImpact:"Accidental data exposure; compliance gap; potential breach entry point",suggestedControls:["Implement Terraform IaC with mandatory code review","Enable AWS Config rules for public bucket detection","Deploy Wiz or Prisma Cloud CSPM for continuous scanning"],testingProcedure:["Run AWS Config compliance report weekly","Review IaC PR approval workflow","Test CSPM alert response time SLA"],evidenceRequired:["AWS Config rule compliance report","IaC repository access controls","CSPM scan results and remediation log"],controlOwner:"Cloud Architect",residualRisk:"Low",remediationEffort:"Low"}
+  ];
+}
+</script>
+</body>
+</html>
